@@ -1809,6 +1809,7 @@ function love.update(dt)
 	assert(SG == SMODS.GUI, "SG, the shorthand for SMODS.GUI, has been overwritten. SG at the time of reading: "..(inspectDepth(SG) or "nil"))
 end
 
+--not ordered, see self.UIT in globals.lua
 SG.UIType = {
 	root = G.UIT.ROOT,
 	row = G.UIT.R,
@@ -1816,6 +1817,9 @@ SG.UIType = {
 	text = G.UIT.T,
 	obj = G.UIT.O,
 	box = G.UIT.B,
+	slider = G.UIT.S,
+	inp = G.UIT.I,
+	pad = G.UIT.padding
 }
 
 --converts a raw ui object to an smods ui object
@@ -1831,10 +1835,12 @@ SG.ui = Object:extend()
 function SG.ui:init(ltype, config, id)
 	self.raw = {
 		n = ltype or SG.UIType.root,
-		config = config or {}
+		config = config or {},
+		nodes = {}
 	}
+	self.raw.config.id = id or random_string(256)
 	self.children = {}
-	self.id = id or random_string(256)
+	self.id = id or self.raw.config.id
 	return self
 end
 
@@ -1890,11 +1896,40 @@ function SG.ui:removeNode(node)
 	end
 end
 
---only supports real SMODS objects. raw UI inside SMODS 
+--search all descendants (SMODS DESCENDANTS ONLY) for a specified id. if id is provided, returns the associated object. otherwise returns the parent and index
 function SG.ui:getInDescendants(idOrNodeOrElement)
-	
+	for i, v in pairs(self.children) do
+		if v.id == idOrNodeOrElement then
+			return v
+		elseif v.raw == idOrNodeOrElement or v == idOrNodeOrElement then
+			return self, i
+		else
+			local ret = ({(v:getInDescendants(idOrNodeOrElement))}) --parens because lua is so weird with these expressions
+			if next(ret) then
+				return unpack(ret)
+			end
+		end
+	end
+	return false
 end
 
+--similar to above but for just the one set of children.
 function SG.ui:getInChildren(idOrNode)
-
+	for i, v in pairs(self.children) do
+		if v.id == idOrNode then
+			return v
+		elseif v.raw == idOrNode then
+			return self
+		end
+	end
+	return false
 end
+
+--now the actual functions with ease-of-use stuff!
+--makes for easily setting up configs
+SG.root = SG.ui:extend()
+SG.row = SG.ui:extend()
+SG.col = SG.ui:extend()
+SG.text = SG.ui:extend()
+SG.obj = SG.ui:extend()
+SG.box = SG.ui:extend()
