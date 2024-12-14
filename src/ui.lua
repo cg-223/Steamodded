@@ -1795,3 +1795,106 @@ G.FUNCS.SMODS_change_mipmap = function(args)
 	G:set_render_settings()
 	SMODS:save_mod_config()
 end
+
+
+
+--goal of the below functions are to make UI more simple and verbal. there isn't much added functionality
+SG = SMODS.GUI --quick shorthand. generally these functions will be slower 
+
+--below ensures above is never overwritten, and provides an explanatory error if it is
+--since tables are compared by reference this should always work fine
+local old = love.update
+function love.update(dt)
+	old(dt)
+	assert(SG == SMODS.GUI, "SG, the shorthand for SMODS.GUI, has been overwritten. SG at the time of reading: "..(inspectDepth(SG) or "nil"))
+end
+
+SG.UIType = {
+	root = G.UIT.ROOT,
+	row = G.UIT.R,
+	col = G.UIT.C,
+	text = G.UIT.T,
+	obj = G.UIT.O,
+	box = G.UIT.B,
+}
+
+--converts a raw ui object to an smods ui object
+function SG.toUIObject(ui, id)
+	assert(not next(ui.nodes), "toUIObject does not support objects with children. Use SMODS.GUI.deepUIObj instead.")
+	local new = SG.ui(ui.n, ui.config, id)
+	return new
+end
+
+--SG.ui is the base for the above uitypes.
+SG.ui = Object:extend()
+
+function SG.ui:init(ltype, config, id)
+	self.raw = {
+		n = ltype or SG.UIType.root,
+		config = config or {}
+	}
+	self.children = {}
+	self.id = id or random_string(256)
+	return self
+end
+
+
+function SG.ui:insert(obj)
+	obj.parent = self
+	table.insert(self.children, obj)
+	table.insert(self.raw.nodes, obj)
+end
+
+
+--highest-level. adds a node, or an SMODS ui element. doesn't error if failed, only returns false
+function SG.ui:add(nodeOrElement)
+	if nodeOrElement.nodes then
+		self:addRawNode(nodeOrElement)
+		return true
+	elseif nodeOrElement.children and nodeOrElement.raw then
+		self:addElement(nodeOrElement)
+		return true
+	end
+	return false
+end
+
+--converts the raw node into an SMODS uiobject and inserts it into the object.
+function SG.ui:addRawNode(node)
+	local newElement = SG.toUIObject(node)
+	self:insert(newElement)
+end
+
+--adds an SMODS ui element. properly errors if the element isnt a uiobject
+function SG.ui:addElement(element)
+	assert(element.children and element.raw, "addElement was passed a non-SMODS UI element object")
+	self:insert(element)
+end
+
+--supports an index or an object. if the specified node exists, return true. otherwise return false. error safe
+function SG.ui:removeNode(node)
+	if type(node) == "number" then
+		if self.raw.nodes[node] then
+			table.remove(self.raw.nodes, node)
+			return true
+		end
+		return false
+	else
+		local i = 1
+		while self.raw.nodes[i] do
+			if self.raw.nodes[i] == node then
+				table.remove(self.raw.nodes, i)
+				return true
+			end
+		end
+		return false
+	end
+end
+
+--only supports real SMODS objects. raw UI inside SMODS 
+function SG.ui:getInDescendants(idOrNodeOrElement)
+	
+end
+
+function SG.ui:getInChildren(idOrNode)
+
+end
