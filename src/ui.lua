@@ -1823,18 +1823,39 @@ SG.UIType = {
 }
 
 --converts a raw ui object to an smods ui object
+--use SG.cascadeCreateUIObj if you need to convert the children nodes too
+--returns 0 for below warning, 1-3 for various successes
 function SG.toUIObject(ui, id)
-	assert(not next(ui.nodes), "toUIObject does not support objects with children. Use SMODS.GUI.deepUIObj instead.")
+	assert(not next(ui.nodes), "toUIObject does not support objects with children. Use SMODS.GUI.cascadeCreateUIObj instead.")
+	if ui.SMODSFLAG then
+		if id and id ~= ui.id then
+			sendWarnMessage("Attempted to coerce a UI object to a UI object, with a different ID. Will not overwrite", "SMODS.GUI")
+			return ui, 0
+		end
+		return ui, 2
+	end
+	if ui.config and ui.config.SGobj then
+		return ui.config.SGobj, 3
+	end
 	local new = SG.ui(ui.n, ui.config, id)
-	return new
+	new.raw.config.SGobj = new
+	return new, 1
 end
 
---SG.ui is the base for the above uitypes.
+--todo: make this copy through an entire UI and make a SMODS object containing all of them
+function SG.cascadeCreateUIObj(obj)
+	
+end
+
+
+
+
+
 SG.ui = Object:extend()
 
 function SG.ui:init(ltype, config, id)
 	self.raw = {
-		n = ltype or SG.UIType.root,
+		n = assert(ltype, "UI created with no type!"),
 		config = config or {},
 		nodes = {}
 	}
@@ -1852,7 +1873,7 @@ function SG.ui:insert(obj)
 end
 
 
---highest-level. adds a node, or an SMODS ui element. doesn't error if failed, only returns false
+--adds a node, or an SMODS ui element. doesn't error if failed, only returns false
 function SG.ui:add(nodeOrElement)
 	if nodeOrElement.nodes then
 		self:addRawNode(nodeOrElement)
@@ -1867,7 +1888,7 @@ end
 --converts the raw node into an SMODS uiobject and inserts it into the object.
 function SG.ui:addRawNode(node)
 	local newElement = SG.toUIObject(node)
-	self:insert(newElement)
+	assert(self:add(newElement), "Failed to add a raw node.")
 end
 
 --adds an SMODS ui element. properly errors if the element isnt a uiobject
@@ -1925,6 +1946,8 @@ function SG.ui:getInChildren(idOrNode)
 	return false
 end
 
+
+
 --now the actual functions with ease-of-use stuff!
 --makes for easily setting up configs
 SG.root = SG.ui:extend()
@@ -1932,4 +1955,39 @@ SG.row = SG.ui:extend()
 SG.col = SG.ui:extend()
 SG.text = SG.ui:extend()
 SG.obj = SG.ui:extend()
+
+
+
+
+
+
 SG.box = SG.ui:extend()
+SG.slider = SG.ui:extend()
+
+function SG.root:init(config)
+
+end
+
+function SG.row:init(config)
+
+end
+
+function SG.col:init(config)
+
+end
+
+function SG.text:init(config)
+
+end
+
+function SG.obj:init(config)
+
+end
+
+function SG.obj:setObject(obj)
+
+end
+
+function SG.box:init(config)
+
+end
