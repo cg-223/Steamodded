@@ -1819,7 +1819,9 @@ SG.UIType = {
 	box = G.UIT.B,
 	slider = G.UIT.S,
 	inp = G.UIT.I,
-	pad = G.UIT.padding
+	pad = G.UIT.padding,
+	dropdown = 9,
+	scrollable = 10, --im gonna regret this  
 }
 
 --converts a raw ui object to an smods ui object
@@ -1990,4 +1992,25 @@ end
 
 function SG.box:init(config)
 
+end	
+
+function SG.slider:init(config)
+
 end
+
+function SG.inp:init(config)
+
+end
+
+function SG.pad:init(config)
+
+end
+
+function SG.dropdown:init(config)
+
+end
+
+function SG.scrollable:init(config)
+
+end
+
