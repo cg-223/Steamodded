@@ -1857,11 +1857,11 @@ SG.ui = Object:extend()
 
 function SG.ui:init(ltype, config, id)
 	self.raw = {
-		n = assert(ltype, "UI created with no type!"),
+		n = ltype or (print("UI created with no type!") and SG.UIType.root), --assert(ltype, "UI created with no type!"),
 		config = config or {},
 		nodes = {}
 	}
-	self.raw.config.id = id or random_string(256)
+	self.raw.config.id = id or self.raw.config.id or random_string(12)
 	self.children = {}
 	self.id = id or self.raw.config.id
 	return self
@@ -1878,19 +1878,22 @@ end
 --adds a node, or an SMODS ui element. doesn't error if failed, only returns false
 function SG.ui:add(nodeOrElement)
 	if nodeOrElement.nodes then
-		self:addRawNode(nodeOrElement)
-		return true
+		if #nodeOrElement.nodes > 0 then
+			self:add(SG.cascadeCreateUIObj(nodeOrElement))
+		end
+		local added = self:addRawNode(nodeOrElement)
+		return added
 	elseif nodeOrElement.children and nodeOrElement.raw then
 		self:addElement(nodeOrElement)
-		return true
+		return nodeOrElement
 	end
 	return false
 end
 
---converts the raw node into an SMODS uiobject and inserts it into the object.
+--converts the raw node into an SMODS uiobject and inserts it into the object. this is messy
 function SG.ui:addRawNode(node)
 	local newElement = SG.toUIObject(node)
-	assert(self:add(newElement), "Failed to add a raw node.")
+	return assert(self:add(newElement), "Failed to add a raw node.")
 end
 
 --adds an SMODS ui element. properly errors if the element isnt a uiobject
@@ -1957,60 +1960,130 @@ SG.row = SG.ui:extend()
 SG.col = SG.ui:extend()
 SG.text = SG.ui:extend()
 SG.obj = SG.ui:extend()
-
-
-
+SG.inp = SG.ui:extend()
+SG.pad = SG.ui:extend()
+SG.dropdown = SG.ui:extend()
+SG.scrollable = SG.ui:extend()
 
 
 
 SG.box = SG.ui:extend()
 SG.slider = SG.ui:extend()
 
-function SG.root:init(config)
 
+function SG.root:init(args)
+	args.object = args.object or {}
+	if args.object.nodes and assert(type(args.nodes) == "table", "Nodes provided, but nodes is not a table") and next(args.nodes) then
+		SG.cascadeCreateUIObj(args.object)
+	end
+	SG.ui.init(self, SG.UIType.root, args.object.config, args.id)
+	return self
 end
 
-function SG.row:init(config)
+function SG.row:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.row, config, args.id)
+	return self
 end
 
-function SG.col:init(config)
+function SG.col:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.col, config, args.id)
+	return self
 end
 
-function SG.text:init(config)
+function SG.text:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.text, config, args.id)
+	return self
 end
 
-function SG.obj:init(config)
+function SG.obj:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.obj, config, args.id)
+	return self
 end
 
 function SG.obj:setObject(obj)
-
+	self.raw.config.object = obj
+	self.object = obj
+	return {self = self, obj = obj}
 end
 
-function SG.box:init(config)
+function SG.box:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.box, config, args.id)
+	return self
 end	
 
-function SG.slider:init(config)
+function SG.slider:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.slider, config, args.id)
+	return self
 end
 
-function SG.inp:init(config)
+function SG.inp:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.inp, config, args.id)
+	return self
 end
 
-function SG.pad:init(config)
+function SG.pad:init(args)
+	local config = args.object.config
 
+	SG.ui.init(self, SG.UIType.pad, config, args.id)
+	return self
 end
 
-function SG.dropdown:init(config)
+function SG.dropdown:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.dropdown, config, args.id)
+	return self
 end
 
-function SG.scrollable:init(config)
+function SG.scrollable:init(args)
+	local config = args.object.config
+	
 
+	SG.ui.init(self, SG.UIType.scrollable, config, args.id)
+	return self
 end
 
+if false then
+	
+	local root = SG.root{
+		object = {
+			config = {
+
+			}
+		},
+		id = "theRoot"
+	}
+	local row = root:add(SG.row{
+		object = {
+			config = {
+				align = "cm", padding = 0.07 / sizediv, no_fill = true, scale = 1 / sizediv
+			}
+		},
+		id = "theRow"
+	})
+	local obj = row:add(SG.obj{
+		id = "collectionRow"..tostring(i)
+	}):setObject(G.TMJCOLLECTION[i])
+end
