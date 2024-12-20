@@ -197,7 +197,7 @@ local function parse_loc_file(file_name, force)
             -- force mode is on and the value is not a table,
             -- change/add the thing
             -- brings back compatibility with language patching mods
-            if not ref_table[k] or (force and ((type(v) ~= 'table') or type(v[1]) == 'string')) then
+            if (not ref_table[k] and type(k) ~= 'number') or (force and ((type(v) ~= 'table') or type(v[1]) == 'string')) then
                 ref_table[k] = v
             else
                 recurse(v, ref_table[k])
@@ -796,4 +796,18 @@ function time(func, ...)
     func(...)
     local end_time = love.timer.getTime()
     return 1000*(end_time-start_time)
+end
+
+SMODS.collection_pool = function(_base_pool)
+    local pool = {}
+    if type(_base_pool) ~= 'table' then return pool end
+    local is_array = _base_pool[1]
+    local ipairs = is_array and ipairs or pairs
+    for _, v in ipairs(_base_pool) do
+        if (not G.ACTIVE_MOD_UI or v.mod == G.ACTIVE_MOD_UI) and not v.no_collection then
+            pool[#pool+1] = v
+        end
+    end
+    if not is_array then table.sort(pool, function(a,b) return a.order < b.order end) end
+    return pool
 end
