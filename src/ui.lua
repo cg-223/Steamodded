@@ -1991,18 +1991,24 @@ SG.scrollable = SG.ui:extend()
 SG.box = SG.ui:extend()
 SG.slider = SG.ui:extend()
 
+local function basicConfig(args)
+	args.object = args.object or {}
+	local config = args.object.config or {}
+	for i, v in pairs(args.config or {}) do
+		config[i] = v
+	end
+
+	return config
+end
 
 function SG.root:init(args)
-	args.object = args.object or {}
-	if args.object.nodes and assert(type(args.nodes) == "table", "Nodes provided, but nodes is not a table") and next(args.nodes) then
-		SG.cascadeCreateUIObj(args.object)
-	end
-	SG.ui.init(self, SG.UIType.root, args.object.config, args.id)
+	local config = basicConfig(args)
+	SG.ui.init(self, SG.UIType.root, config, args.id)
 	return self
 end
 
 function SG.row:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.row, config, args.id)
@@ -2010,7 +2016,7 @@ function SG.row:init(args)
 end
 
 function SG.col:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.col, config, args.id)
@@ -2018,7 +2024,7 @@ function SG.col:init(args)
 end
 
 function SG.text:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.text, config, args.id)
@@ -2026,7 +2032,7 @@ function SG.text:init(args)
 end
 
 function SG.obj:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.obj, config, args.id)
@@ -2040,7 +2046,7 @@ function SG.obj:setObject(obj)
 end
 
 function SG.box:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.box, config, args.id)
@@ -2048,7 +2054,7 @@ function SG.box:init(args)
 end	
 
 function SG.slider:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.slider, config, args.id)
@@ -2056,7 +2062,7 @@ function SG.slider:init(args)
 end
 
 function SG.inp:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.inp, config, args.id)
@@ -2064,14 +2070,14 @@ function SG.inp:init(args)
 end
 
 function SG.pad:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 
 	SG.ui.init(self, SG.UIType.pad, config, args.id)
 	return self
 end
 
 function SG.dropdown:init(args)
-	local config = args.object.config
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.dropdown, config, args.id)
@@ -2079,12 +2085,14 @@ function SG.dropdown:init(args)
 end
 
 function SG.scrollable:init(args)
-	local config = args.object.config
+	args.object = args.object or {}
+	local config = basicConfig(args)
 	
 
 	SG.ui.init(self, SG.UIType.scrollable, config, args.id)
 	return self
 end
+
 
 if false then
 	
