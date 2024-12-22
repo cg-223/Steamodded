@@ -80,6 +80,26 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         SMODS.modify_key(obj, mod and mod.prefix, shader_cfg, 'shader')
         local card_key_cfg = obj.prefix_config.card_key
         SMODS.modify_key(obj, mod and mod.prefix, card_key_cfg, 'card_key')
+        local above_stake_cfg = obj.prefix_config.above_stake
+        if above_stake_cfg ~= false then
+            if type(above_stake_cfg) ~= 'table' then above_stake_cfg = {} end
+            SMODS.modify_key(obj, mod and mod.prefix, above_stake_cfg.mod, 'above_stake')
+            SMODS.modify_key(obj, cls.class_prefix, above_stake_cfg.class, 'above_stake') 
+        end
+        local applied_stakes_cfg = obj.prefix_config.applied_stakes
+        if applied_stakes_cfg ~= false and obj.applied_stakes then
+            if type(applied_stakes_cfg) ~= 'table' then applied_stakes_cfg = {} end
+            for k,v in pairs(obj.applied_stakes) do
+                SMODS.modify_key(obj.applied_stakes, mod and mod.prefix, (applied_stakes_cfg[k] or {}).mod or applied_stakes_cfg.mod, k)
+                SMODS.modify_key(obj.applied_stakes, cls.class_prefix, (applied_stakes_cfg[k] or {}).class or applied_stakes_cfg.class, k)
+            end
+        end
+        local unlocked_stake_cfg = obj.prefix_config.unlocked_stake
+        if unlocked_stake_cfg ~= false then
+            if type(unlocked_stake_cfg) ~= 'table' then unlocked_stake_cfg = {} end
+            SMODS.modify_key(obj, mod and mod.prefix, unlocked_stake_cfg.mod, 'unlocked_stake')
+            SMODS.modify_key(obj, cls.class_prefix, unlocked_stake_cfg.class, 'unlocked_stake') 
+        end
     end
 
     function SMODS.GameObject:check_duplicate_register()
@@ -268,7 +288,7 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             if type(self.font) == 'table' and not self.font.FONT and self.font.file and self.font.render_scale then
                 local data = assert(NFS.newFileData(self.mod.path .. 'assets/fonts/' .. self.font.file), ('Failed to collect file data for font of language %s'):format(self.key))
                 self.font.FONT = love.graphics.newFont(data, self.font.render_scale)
-            else 
+            elseif type(self.font) ~= 'table' then
                 self.font = G.FONTS[type(self.font) == 'number' and self.font or 1] or G.FONTS[1]
             end
             G.LANGUAGES[self.key] = self
@@ -522,8 +542,8 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
                 -- Inject stake in the correct spot
                 self.count = #G.P_CENTER_POOLS[self.set] + 1
                 self.order = self.count
-                if self.above_stake then
-                    self.order = G.P_STAKES[self.class_prefix .. "_" .. self.above_stake].order + 1
+                if self.above_stake and G.P_STAKES[self.above_stake] then
+                    self.order = G.P_STAKES[self.above_stake].order + 1
                 end
                 for _, v in pairs(G.P_STAKES) do
                     if v.order >= self.order then
@@ -571,7 +591,7 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             for _, v in pairs(self.applied_stakes) do
                 any_applied = true
                 applied_text = applied_text ..
-                    localize { set = self.set, key = self.class_prefix .. '_' .. v, type = 'name_text' } .. ', '
+                    localize { set = self.set, key = v, type = 'name_text' } .. ', '
             end
             applied_text = applied_text:sub(1, -3)
             if not any_applied then
@@ -596,7 +616,7 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             return applied
         end
         for _, s in pairs(stake.applied_stakes) do
-            SMODS.build_stake_chain(G.P_STAKES['stake_'..s], applied)
+            SMODS.build_stake_chain(G.P_STAKES[s], applied)
         end
         return applied
     end 
@@ -911,14 +931,7 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
                 )
             end
 
-            local consumable_pool = {}
-            if G.ACTIVE_MOD_UI then
-                for _, v in ipairs(G.P_CENTER_POOLS[self.key]) do
-                    if v.mod and G.ACTIVE_MOD_UI.id == v.mod.id then consumable_pool[#consumable_pool+1] = v end
-                end
-            else
-                consumable_pool = G.P_CENTER_POOLS[self.key]
-            end
+            local consumable_pool = SMODS.collection_pool(G.P_CENTER_POOLS[self.key])
 
             local sum = 0
             for j = 1, #G.your_collection do
@@ -1145,9 +1158,9 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
                 target.scale = res.scale
                 target.text_colour = res.text_colour
             end
-            if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            if desc_nodes == full_UI_table.main and not full_UI_table.name and self.set ~= 'Enhanced' then
                 full_UI_table.name = localize { type = 'name', set = target.set, key = target.key, nodes = full_UI_table.name }
-            elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name then
+            elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
                 desc_nodes.name = localize{type = 'name_text', key = target.key, set = target.set } 
             end
             if specific_vars and specific_vars.debuffed and not res.replace_debuff then
@@ -1687,9 +1700,14 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         loc_vars = function(self)
             return { vars = { G.GAME.probabilities.normal } }
         end,
+        collection_loc_vars = function(self)
+            return { vars = { '1' }}
+        end,
         process_loc_text = function(self)
-            G.localization.descriptions.Blind['bl_wheel'].text[1] =
-                "#1#"..G.localization.descriptions.Blind['bl_wheel'].text[1]
+            local text = G.localization.descriptions.Blind[self.key].text[1]
+            if string.sub(text, 1, 3) ~= '#1#' then
+                G.localization.descriptions.Blind[self.key].text[1] = "#1#"..text
+            end
             SMODS.Blind.process_loc_text(self)
         end,
         get_loc_debuff_text = function() return G.GAME.blind.loc_debuff_text end,
@@ -2583,38 +2601,38 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             G.P_TAGS[self.key] = self
             SMODS.insert_pool(G.P_CENTER_POOLS[self.set], self)
         end,
-        -- generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
-        --     local target = {
-        --         type = 'descriptions',
-        --         key = self.key,
-        --         set = self.set,
-        --         nodes = desc_nodes,
-        --         vars = specific_vars
-        --     }
-        --     local res = {}
-        --     if self.loc_vars and type(self.loc_vars) == 'function' then
-        --         -- card is a dead arg here
-        --         res = self:loc_vars(info_queue, card) or {}
-        --         target.vars = res.vars or target.vars
-        --         target.key = res.key or target.key
-        --         target.set = res.set or target.set
-        --         target.scale = res.scale
-        --         target.text_colour = res.text_colour
-        --     end
-        --     if desc_nodes == full_UI_table.main and not full_UI_table.name then
-        --         full_UI_table.name = localize { type = 'name', set = target.set, key = target.key, nodes = full_UI_table.name }
-        --     elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name then
-        --         desc_nodes.name = localize{type = 'name_text', key = target.key, set = target.set } 
-        --     end
-        --     if res.main_start then
-        --         desc_nodes[#desc_nodes + 1] = res.main_start
-        --     end
-        --     localize(target)
-        --     if res.main_end then
-        --         desc_nodes[#desc_nodes + 1] = res.main_end
-        --     end
-        --     desc_nodes.background_colour = res.background_colour
-        -- end
+        generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+            local target = {
+                type = 'descriptions',
+                key = self.key,
+                set = self.set,
+                nodes = desc_nodes,
+                vars = specific_vars
+            }
+            local res = {}
+            if self.loc_vars and type(self.loc_vars) == 'function' then
+                -- card is a dead arg here
+                res = self:loc_vars(info_queue, card) or {}
+                target.vars = res.vars or target.vars
+                target.key = res.key or target.key
+                target.set = res.set or target.set
+                target.scale = res.scale
+                target.text_colour = res.text_colour
+            end
+            if desc_nodes == full_UI_table.main and not full_UI_table.name then
+                full_UI_table.name = localize { type = 'name', set = target.set, key = target.key, nodes = full_UI_table.name }
+            elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name then
+                desc_nodes.name = localize{type = 'name_text', key = target.key, set = target.set } 
+            end
+            if res.main_start then
+                desc_nodes[#desc_nodes + 1] = res.main_start
+            end
+            localize(target)
+            if res.main_end then
+                desc_nodes[#desc_nodes + 1] = res.main_end
+            end
+            desc_nodes.background_colour = res.background_colour
+        end
     }
 
     -------------------------------------------------------------------------------------------------
@@ -2640,6 +2658,14 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         process_loc_text = function(self)
             SMODS.process_loc_text(G.localization.descriptions.Other, self.key, self.loc_txt)
             SMODS.process_loc_text(G.localization.misc.labels, self.key, self.loc_txt, 'label')
+        end,
+        register = function(self)
+            if self.registered then
+                sendWarnMessage(('Detected duplicate register call on object %s'):format(self.key), self.set)
+                return
+            end
+            SMODS.Sticker.super.register(self)
+            self.order = #self.obj_buffer
         end,
         inject = function(self)
             self.sticker_sprite = Sprite(0, 0, G.CARD_W, G.CARD_H, G.ASSET_ATLAS[self.atlas], self.pos)
@@ -2737,26 +2763,6 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         apply = function(self, card, val)
             card[self.key] = val
         end
-    }
-
-    -------------------------------------------------------------------------------------------------
-    ----- API CODE GameObject.DollarRow
-    -------------------------------------------------------------------------------------------------
-
-    SMODS.DollarRows = {}
-    SMODS.DollarRow = SMODS.GameObject:extend {
-        obj_buffer = {},
-        obj_table = {},
-        set = 'Dollar Row',
-        class_prefix = 'p',
-        required_params = {
-            'key'
-        },
-        config = {},
-        above_dot_bar = false,
-        symbol_config = { character = '$', color = G.C.MONEY, needs_localize = true },
-        custom_message_config = { message = nil, color = nil, scale = nil },
-        inject = function() end,
     }
 
     -------------------------------------------------------------------------------------------------
