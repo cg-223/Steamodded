@@ -1987,9 +1987,16 @@ SG.slider = SG.ui:extend()
 local function basicConfig(args)
 	args.object = args.object or {}
 	local config = args.object.config or {}
-	for i, v in pairs(args.config or {}) do
+	local sgcfg = args.config or {}
+	--[[for i, v in pairs(args.config or {}) do
 		config[i] = v
-	end
+	end]]
+	config.minh = sgcfg.h or sgcfg.height
+	config.maxh = sgcfg.h or sgcfg.height
+	config.h = sgcfg.h or sgcfg.height
+	config.minw = sgcfg.w or sgcfg.width
+	config.maxw = sgcfg.w or sgcfg.width
+	config.w = sgcfg.w or sgcfg.width
 
 	return config
 end
