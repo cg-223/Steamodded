@@ -1867,6 +1867,20 @@ function SG.ui:init(ltype, config, id)
 	return self
 end
 
+--remove references to self, and selfs children
+--shouldnt crash due to recursion ? i think ? recursion shouldnt be possible here anyways but regardless
+function SG.ui:remove(seen)
+	seen = seen or {}
+	for i = #self.children, 1, -1 do
+		child = self.children[1]
+		if not seen[child] then
+			seen[child] = true
+			child:remove(seen)
+			table.remove(self.children, i)
+		end
+	end
+	seen = nil --cleanup for gc
+end
 
 function SG.ui:insert(obj)
 	obj.parent = self
@@ -1989,7 +2003,7 @@ end
 function SG.row:init(args)
 	local config = basicConfig(args)
 	
-
+	
 	SG.ui.init(self, SG.UIType.row, config, args.id)
 	return self
 end
