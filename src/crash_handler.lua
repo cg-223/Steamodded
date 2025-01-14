@@ -38,7 +38,7 @@ function loadStackTracePlus()
     local table_concat = table.concat
 
     local _M = {
-        max_tb_output_len = 70 -- controls the maximum length of the 'stringified' table before cutting with ' (more...)'
+        max_tb_output_len = 140 -- controls the maximum length of the 'stringified' table before cutting with ' (more...)'
     }
 
     -- this tables should be weak so the elements in them won't become uncollectable
