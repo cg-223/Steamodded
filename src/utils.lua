@@ -1537,7 +1537,10 @@ local flat_copy_table = function(tbl)
 end
 
 ---Seatch for val anywhere deep in tbl. Return a table of finds, or the first found if immediate is provided.
-SMODS.deepfind = function(tbl, val, immediate)
+SMODS.deepfind = function(tbl, val, args)
+    args = args or {}
+    local immediate = args.immediate or false
+    local mode = ((args.mode == "index" and "i") or (args.mode == "value" and "v'))
     local seen = {[tbl] = true}
     local collector = {}
     local stack = { {tbl = tbl, path = {}, objpath = {}} }
@@ -1556,7 +1559,7 @@ SMODS.deepfind = function(tbl, val, immediate)
         --for every table that we have
         for i, v in pairs(currentTbl) do
             --if the value matches
-            if v == val then
+            if (mode == "v" and v == val) or (mode == "i") and i == val then
                 --copy our values and store it in the collector
                 local newPath = flat_copy_table(currentPath)
                 local newObjPath = flat_copy_table(currentObjPath)
@@ -1582,7 +1585,7 @@ SMODS.deepfind = function(tbl, val, immediate)
 
     return collector
 end
-
+--[[
 --Seatch for val as an index anywhere deep in tbl. Return a table of finds, or the first found if immediate is provided.
 SMODS.deepfindbyindex = function(tbl, val, immediate)
     local seen = {[tbl] = true}
@@ -1629,7 +1632,7 @@ SMODS.deepfindbyindex = function(tbl, val, immediate)
 
     return collector
 end
-
+]]
 -- this is for debugging
 SMODS.debug_calculation = function()
     G.contexts = {}
