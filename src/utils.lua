@@ -1537,15 +1537,19 @@ local flat_copy_table = function(tbl)
 end
 
 ---Seatch for val anywhere deep in tbl. Return a table of finds, or the first found if args.immediate is provided.
-SMODS.deepfind = function(tbl, val, args)
-    args = args or {}
+SMODS.deepfind = function(tbl, val, mode, immediate)
     --backwards compat (remove later probably)
-    if args == true then
-        args = {immediate = true}
+    if mode == true then
+        mode = "v"
+        immediate = true
     end
-    local immediate = args.immediate or false
-    local mode = (((args.mode == "index" or args.mode == "i") and "i") 
-    or ((args.mode == "value" or args.mode == "v") and "v")) or "v"
+    if mode == "index" then
+        mode = "i"
+    elseif mode == "value" then
+        mode = "v"
+    elseif mode ~= "v" and mode ~= "i" then
+        mode = "v"
+    end
     local seen = {[tbl] = true}
     local collector = {}
     local stack = { {tbl = tbl, path = {}, objpath = {}} }
@@ -1593,7 +1597,7 @@ end
 
 --backwards compat (remove later probably)
 SMODS.deepfindbyindex = function(tbl, val, immediate)
-    return SMODS.deepfind(tbl, val, {mode = "i", immediate=immediate})
+    return SMODS.deepfind(tbl, val, "i", immediate)
 end
 
 -- this is for debugging
