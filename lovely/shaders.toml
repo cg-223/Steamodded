@@ -13,7 +13,7 @@ payload = '''
 local shader = "resources/shaders/"..filename
 local lovely_success, lovely = pcall(require, "lovely")
 if lovely_success and lovely.apply_patches then
-    assert(lovely.apply_patches(filename, love.filesystem.read(shader)))
+    shader = assert(lovely.apply_patches(filename, love.filesystem.read(shader)))
 end
 self.SHADERS[shader_name] = love.graphics.newShader(shader)
 '''
