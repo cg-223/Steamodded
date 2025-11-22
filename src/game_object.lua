@@ -19,6 +19,7 @@ function loadAPIs()
         return cls
     end
 
+    local key_unique = 0
     function SMODS.GameObject:__call(o)
         o = o or {}
         assert(o.mod == nil, "Created object should not have \"mod\" field defined.")
@@ -32,6 +33,19 @@ function loadAPIs()
         -- also updates o.prefix_config
         SMODS.add_prefixes(self, o)
         if o:check_duplicate_key() then return end
+        if (self.default_size or (self.px and self.py) or self.size) and self.path then
+            key_unique = key_unique + 1;
+            local size = self.size or self.default_size -- if a mod wants to override
+            local px, py = self.px or size.px, self.py or size.py
+            SMODS.Atlas {
+                key = "__autogen_atlas_" .. self.key .. "_" .. key_unique,
+                path = self.path,
+                px = px,
+                py = py,
+                raw_key = true,
+            }
+            self.atlas = "__autogen_atlas_" .. self.key .. "_" .. key_unique
+        end
         o:register()
         return o
     end
@@ -610,6 +624,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         atlas = 'chips',
         pos = { x = 0, y = 0 },
         injected = false,
+        default_size = {
+            px = 29,
+            py = 29
+        },
         required_params = {
             'key',
             'pos',
@@ -1096,8 +1114,6 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
     -------------------------------------------------------------------------------------------------
     ----- API CODE GameObject.Center
     -------------------------------------------------------------------------------------------------
-
-    local key_unique = 0
     SMODS.Centers = {}
     --- Shared class for center objects. Holds no default values; only register an object directly using this if it doesn't fit any subclass, creating one isn't justified and you know what you're doing.
     SMODS.Center = SMODS.GameObject:extend {
@@ -1108,19 +1124,6 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         register = function(self)
             -- 0.9.8 defense
             self.name = self.name or self.key
-            if (self.default_size or (self.px and self.py) or self.size ) and self.path then
-                key_unique = key_unique + 1;
-                local size = self.size or self.default_size -- if a mod wants to override
-                local px, py = self.px or size.px, self.py or size.py
-                SMODS.Atlas {
-                    key = "__autogen_atlas_"..self.key.."_"..key_unique,
-                    path = self.path,
-                    px = px,
-                    py = py,
-                    raw_key = true,
-                }
-                self.atlas = "__autogen_atlas_"..self.key.."_"..key_unique
-            end
             SMODS.Center.super.register(self)
         end,
         inject = function(self)
@@ -1687,6 +1690,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         obj_buffer = {},
         obj_table = SMODS.UndiscoveredSprites,
         set = 'Undiscovered Sprite',
+        default_size = {
+            px = 71,
+            py = 95
+        },
         -- this is more consistent and allows for extension
         process_loc_text = function() end,
         inject = function(self)
@@ -1722,6 +1729,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         debuff = {},
         vars = {},
         config = {},
+        default_size = {
+            px = 34,
+            py = 34
+        },
         dollars = 5,
         mult = 2,
         atlas = 'blind_chips',
@@ -1791,6 +1802,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         set = 'Seal',
         atlas = 'centers',
         pos = { x = 0, y = 0 },
+        default_size = {
+            px = 71,
+            py = 95
+        },
         discovered = false,
         badge_colour = HEX('FFFFFF'),
         default_size = { px = 71, py = 95 },
@@ -2911,6 +2926,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         required_params = {
             'key',
         },
+        default_size = {
+            px = 34,
+            py = 34
+        },
         discovered = false,
         min_ante = nil,
         atlas = 'tags',
@@ -2979,6 +2998,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         rate = 0.3,
         atlas = 'stickers',
         pos = { x = 0, y = 0 },
+        default_size = {
+            px = 71,
+            py = 95
+        },
         badge_colour = HEX 'FFFFFF',
         default_compat = true,
         compat_exceptions = {},
@@ -3539,6 +3562,10 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
         required_params = {
             'key',
             'unlock_condition',
+        },
+        default_size = {
+            px = 66,
+            py = 66
         },
         set = 'Achievement',
         class_prefix = "ach",
