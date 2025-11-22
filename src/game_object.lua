@@ -3304,7 +3304,7 @@ Set `prefix_config.key = false` on your object instead.]]):format(obj.key), obj.
             'key',
             'shader' -- can be set to `false` for shaderless edition
         },
-        default_sound = {
+        default_size = {
             px = 71,
             py = 95,
         },
