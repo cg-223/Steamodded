@@ -33,18 +33,18 @@ function loadAPIs()
         -- also updates o.prefix_config
         SMODS.add_prefixes(self, o)
         if o:check_duplicate_key() then return end
-        if (self.default_size or (self.px and self.py) or self.size) and self.path then
+        if self ~= SMODS.Atlas and (o.default_size or (o.px and o.py) or o.size) and o.path then
             key_unique = key_unique + 1;
-            local size = self.size or self.default_size -- if a mod wants to override
-            local px, py = self.px or size.px, self.py or size.py
+            local size = o.size or o.default_size -- if a mod wants to override
+            local px, py = o.px or size.px, o.py or size.py
             SMODS.Atlas {
-                key = "__autogen_atlas_" .. self.key .. "_" .. key_unique,
-                path = self.path,
+                key = "__autogen_atlas_" .. o.key .. "_" .. key_unique,
+                path = o.path,
                 px = px,
                 py = py,
                 raw_key = true,
             }
-            self.atlas = "__autogen_atlas_" .. self.key .. "_" .. key_unique
+            o.atlas = "__autogen_atlas_" .. o.key .. "_" .. key_unique
         end
         o:register()
         return o
